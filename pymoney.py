@@ -3,12 +3,16 @@ from pyrecord import Records
 from pycategory import Categories
 from tkinter import *
 from tkinter import messagebox
+from tkinter import ttk
+import re
 
 """
 initiate & open file
 """
 categories = Categories()
 root = Tk()
+is_finding = False
+find_key = ""
 try:
     with open('records.txt') as fh:
         contents = fh.readlines()
@@ -19,10 +23,12 @@ try:
 
         records = Records(contents)
         start_record = NORMAL
+        start_record_combobox = 'readonly'
         set_money = DISABLED
 except OSError:
     records = Records()
     start_record = DISABLED
+    start_record_combobox = DISABLED
     set_money = NORMAL
 
 """
@@ -51,7 +57,7 @@ def set_initial_money():
 
 def add_record():
     date = record_date_str.get()
-    category = record_category_str.get()
+    category = re.findall(r'\b[a-z]+\b',record_category_entry.get())[0]
     description = record_description_str.get()
     amount = record_amount_str.get()
     try:
@@ -59,17 +65,21 @@ def add_record():
     except ValueError as err:
         messagebox.showwarning("Error message",str(err))
     else:
-        current_money_str.set(f'Now you have {records.money} dollars.')
         record_date_str.set("")
-        record_category_str.set("")
+        record_category_entry.set(record_category_value[0])
         record_description_str.set("")
         record_amount_str.set("")
         view_records()
 
 def view_records():
+    global find_key
+    global is_finding
+    find_key = ""
+    is_finding = False
     records_list = records.view()
     result_box.delete(0,END)
     find_category_str.set("")
+    current_money_str.set(f'Now you have {records.money} dollars.')
     for i, record in enumerate(records_list):
         result_box.insert(i, record)
 
@@ -78,7 +88,35 @@ def save_records():
 
 def delete_record():
     selected_record = result_box.get(ACTIVE)
-    print(selected_record)
+    records.delete(selected_record)
+    if is_finding:
+        find_records(find_key)
+        current_money_str.set(f'Now you have {records.money} dollars.')
+    else:
+        view_records()
+
+def find_records(pre_key = None):
+    global find_key
+    global is_finding
+
+    if pre_key is None:
+        find_key = find_category_str.get()
+
+    if find_key is "":
+        is_finding = False
+        view_records()
+        return
+
+    is_finding = True
+    try:
+        categories_list = categories.find_subcategories(find_key)
+        records_list = records.find(categories_list)
+    except ValueError as err:
+        messagebox.showwarning("Error message",str(err))
+    else:
+        result_box.delete(0,END)
+        for i, record in enumerate(records_list):
+            result_box.insert(i, record)
 
 """
 layout
@@ -93,7 +131,7 @@ find_category_str = StringVar()
 find_category_entry = Entry(f, textvariable=find_category_str, state=start_record)
 find_category_entry.grid(row=0, column=2, columnspan=3)
 
-find_category_btn = Button(f, text='Find', state=start_record, command=lambda: print('Hi'))
+find_category_btn = Button(f, text='Find', state=start_record, command=find_records)
 find_category_btn.grid(row=0, column=5,sticky="W")
 
 res_category_btn = Button(f, text='Reset', state=start_record, command=view_records)
@@ -128,8 +166,10 @@ record_date_entry.grid(row=5,column=10,columnspan=2)
 record_category_label = Label(f, text='Category:')
 record_category_label.grid(row=6,column=8,columnspan=2,sticky='E')
 
-record_category_str = StringVar()
-record_category_entry = Entry(f, textvariable=record_category_str, state=start_record)
+record_category_value = categories.view()
+record_category_value.insert(0, 'Pick a category')
+record_category_entry = ttk.Combobox(f, value=record_category_value, state=start_record_combobox, width=19)
+record_category_entry.set(record_category_value[0])
 record_category_entry.grid(row=6,column=10,columnspan=2)
 
 record_description_label = Label(f, text='Description:')
@@ -163,45 +203,3 @@ main
 view_records()
 mainloop()
 save_records()
-
-
-
-
-"""
-while True:
-    
-    operate_command = input("\nWhat do you want to do (add / view / delete / view categories / find / exit)? ")
-
-    if operate_command == "add":
-
-        record = input("Add an expense or income record with description and amount:\n")
-        records.add(record, categories)
-    
-    elif operate_command == "view":
-
-        records.view()
-    
-    elif operate_command == "delete":
-
-        delete_record = input("Which record do you want to delete? ")
-        records.delete(delete_record)
-
-    elif operate_command == "view categories":
-
-        categories.view()
-
-    elif operate_command == "find":
-        category = input('Which category do you want to find? ')
-        target_categories = categories.find_subcategories(category)
-        records.find(category, target_categories)
-
-    elif operate_command == "exit":
-
-        if records.save():
-            break
-
-    else:
-        ### Wrong command
-        print("Invalid command. Try again.")
-
-"""

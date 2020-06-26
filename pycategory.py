@@ -10,16 +10,23 @@ class Categories:
     """
     View categories
     """
-    def view(self, categories = None, n = 0):
+    def view(self):
+        def recurse_view(categories = None, n = 0):
 
-        if categories == None:
-            categories = self._categories
+            if categories == None:
+                categories = self._categories
 
-        for item in categories:
-            if type(item) is list:
-                self.view(item, n + 2)
-            else:
-                print(' '*n+f'- {item}')
+            categories_list = []
+
+            for item in categories:
+                if type(item) is list:
+                    categories_list.extend(recurse_view(item, n + 2))
+                else:
+                    categories_list.extend([' '*n+f'- {item}'])
+            return categories_list
+        
+        return recurse_view()
+            
 
     """
     Check if the category is valid

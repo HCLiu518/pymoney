@@ -96,7 +96,7 @@ class Records:
         
         records_list = []
         #body
-        for record in self._records:
+        for record in records:
             records_list.append(f"{record._date:=<10s} {record._category: <15s} {record._description: <15s} {int(record._amount):+d}")
         
         return records_list
@@ -105,73 +105,28 @@ class Records:
     Delete the record with item's name input
     """
     def delete(self, delete_item):
-        delete_records = list()
-        delete_order = 1
         
-        ### Create the delete record array
-        for i, v in enumerate(self._records):
-            if v._description == delete_item:
-                delete_records.append((str(delete_order), str(i), v)) # (delete order, real order, Record)
-                delete_order += 1
-        
-        ### Wrong name
-        if delete_order == 1:
-            delete_num = 0
-
-        ### Only one item to delete
-        elif delete_order == 2:
-            delete_num = 1
-        
-        ### Choose one item to delete
-        else:
-            print(f'No. {"Date": <10s} {"Categories": <20s} {"Description": <20s} Amount')
-            print(f'{"":=<3s} {"":=<10s} {"":=<20s} {"":=<20s} {"":=<10s}')
-            for item in delete_records:
-                record = item[-1]
-                print(f"{item[0]: <3s} {record._date: <10s} {record._category: <20s} {record._description: <20s} {int(record._amount):+d}")
-
-            print(f'{"":=<3s}={"":=<10s}={"":=<20s}={"":=<20s}={"":=<10s}')
-            
-            delete_num = input("Which one do you want to delete?")
-        
-        ### check if anything is wrong (name or number) 
-        try:
-            delete_num = int(delete_num)
-            ### check if the input number exceeds the range
-            assert delete_num >= 1
-            assert delete_num <= delete_order - 1
-            self._records.pop(int(delete_records[delete_num - 1][1]))
-            self._money -= int(delete_records[delete_num - 1][-1]._amount)
-            print('Delete complete!')
-        except:
-            print('Delete item not found or wrong number of delete items')
+        for i, record in enumerate(self._records):
+            record_str = f"{record._date:=<10s} {record._category: <15s} {record._description: <15s} {int(record._amount):+d}"
+            if delete_item == record_str:
+                self._money -= int(record._amount)
+                self._records.pop(i)
+                break
 
     """
     Find categories and view the records
     """
-    def find(self, category, categories):
+    def find(self, categories):
 
         if categories == []:
-            print(f"Can't find category \"{category}\"")
-            return
+            raise ValueError("Can't find this category")
 
-        #header
-        print(f"Here's your expense and income records under category \"{category}\":")
-        print(f'{"Date": <10s} {"Category": <20s} {"Description": <20s} Amount')
-        print(f'{"":=<10s} {"":=<20s} {"":=<20s} {"":=<10s}')
-
-        #body
-        total_amount = 0
         filter_records = filter(lambda n: n._category in categories, self._records)
-        for item in filter_records:
-            total_amount += int(item._amount)
-            print(f"{item._date: <10s} {item._category: <20s} {item._description: <20s} {int(item._amount):+d}")
+        records_list = []
+        for record in filter_records:
+            records_list.append(f"{record._date:=<10s} {record._category: <15s} {record._description: <15s} {int(record._amount):+d}")
                 
-        #footer
-        print(f'{"":=<10s}={"":=<20s}={"":=<20s}={"":=<10s}')
-        print(f"The total amount above is {total_amount}.")
-
-        return
+        return records_list
 
     """
     Save
